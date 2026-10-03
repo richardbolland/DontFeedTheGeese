@@ -42,6 +42,7 @@
     autoBind: true, // bind the Stage's default view model instance
     layout: makeLayout(),
     onLoad: function () {
+      loaded = true;
       resize();
       loader.hidden = true;
     },
@@ -55,8 +56,12 @@
   // so the game stays sharp at any window size, on any device, and keep the scene scale up
   // to date as the window changes shape.
   var appliedScale = sceneScale();
+  var loaded = false; // resizing before the file has loaded would hit a renderer that isn't ready
 
   function resize() {
+    if (!loaded) {
+      return;
+    }
     var scale = sceneScale();
     if (Math.abs(scale - appliedScale) > 0.001) {
       appliedScale = scale;
