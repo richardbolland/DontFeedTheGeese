@@ -54,8 +54,14 @@
   // Keep the drawing surface matched to the canvas (and to the screen's pixel density)
   // so the game stays sharp at any window size, on any device, and keep the scene scale up
   // to date as the window changes shape.
+  var appliedScale = sceneScale();
+
   function resize() {
-    game.layout = makeLayout();
+    var scale = sceneScale();
+    if (Math.abs(scale - appliedScale) > 0.001) {
+      appliedScale = scale;
+      game.layout = makeLayout();
+    }
     game.resizeDrawingSurfaceToCanvas();
   }
 
