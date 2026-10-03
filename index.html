@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Don't Feed The Geese</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      /* Only visible while loading: the same green as the game's grass. */
+      background: #6a994e;
+    }
+
+    /* The whole game is the Rive file; the canvas simply covers the window. */
+    #game {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      /* Dragging people around must not scroll or zoom the page on touch screens. */
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      outline: none;
+    }
+
+    #loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: 600 1.25rem/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: #fff;
+      text-align: center;
+      padding: 1rem;
+      pointer-events: none;
+    }
+
+    #loader[hidden] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="loader" role="status">Loading&hellip;</div>
+
+  <script src="vendor/rive.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

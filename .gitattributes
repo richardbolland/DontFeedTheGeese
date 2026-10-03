@@ -1,0 +1,4 @@
+# Keep the Rive runtime and game file byte-for-byte as they are.
+*.riv binary
+*.wasm binary
+vendor/rive.js -text

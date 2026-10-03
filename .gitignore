@@ -1,0 +1,9 @@
+# Editor and OS clutter
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/
+
+# Rive editable backups live outside the repo; only the runtime .riv is published
+*.rev
