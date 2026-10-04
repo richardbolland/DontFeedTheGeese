@@ -2,3 +2,4 @@
 *.riv binary
 *.wasm binary
 vendor/rive.js -text
+*.mp3 binary

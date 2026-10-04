@@ -13,6 +13,7 @@ The whole game lives in the Rive file; this repo is just a minimal page that sho
 |---|---|
 | `index.html` | The page: a full-window canvas and a plain "Loading…" message. |
 | `main.js` | Loads the Rive file and keeps it sized to the window. |
+| `audio.js`, `audio/` | The sound effects: `audio.js` plays an mp3 from `audio/` whenever the game signals one (see `audio/README.txt`). |
 | `dont-feed-the-geese.riv` | The game, exported from Rive (Export → For Runtime). |
 | `vendor/rive.js`, `vendor/rive.wasm` | The Rive web runtime (`@rive-app/webgl2` 2.44.0, MIT), kept here so the site has no CDN dependency. |
 

@@ -46,6 +46,9 @@
       resize();
       loader.hidden = true;
       enableDevMode();
+      if (window.GameAudio) {
+        window.GameAudio.attach(game); // sound effects (see audio.js)
+      }
     },
     onLoadError: function (error) {
       console.error('Could not load the game:', error);
