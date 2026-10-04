@@ -56,14 +56,17 @@
   // Dev mode: opening the page with ?dev in the address skips straight to the end of the game
   // (the last feeder is fed to the goose), so the ending can be tested without finding everyone.
   function enableDevMode() {
-    if (!new URLSearchParams(window.location.search).has('dev')) {
+    var params = new URLSearchParams(window.location.search);
+    if (!params.has('dev')) {
       return;
     }
-    var flag = game.viewModelInstance && game.viewModelInstance.boolean('devSkipToEnd');
+    // ?dev=destroy goes further: the cages are already full and it's the last phase.
+    var name = params.get('dev') === 'destroy' ? 'devSkipCages' : 'devSkipToEnd';
+    var flag = game.viewModelInstance && game.viewModelInstance.boolean(name);
     if (flag) {
       flag.value = true;
     } else {
-      console.warn('Dev mode: the Stage has no devSkipToEnd property.');
+      console.warn('Dev mode: the Stage has no ' + name + ' property.');
     }
   }
 
