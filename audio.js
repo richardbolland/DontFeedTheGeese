@@ -42,11 +42,8 @@
     },
     talk: { files: variants('person-talking', 3), volume: 0.7, gap: 150 },
     pop: { files: variants('click-pop', 3), volume: 0.7, gap: 60 },
-    quack: {
-      files: variants('ducks-quacking', 3).concat(['ducks-quacking.wav']),
-      volume: 0.7,
-      gap: 300,
-    },
+    // Ducks quacking in the background: a long recording that loops from the first click onwards.
+    ducks: { files: ['ducks-quacking.mp3'], volume: 0.35, loop: true },
     feedKing: { files: ['feed-king-duck.mp3'], volume: 0.8 },
     eating: { files: ['eating.mp3'], volume: 0.8 },
     cageDrop: { files: ['cage-drop.mp3'], volume: 0.8 },
@@ -59,7 +56,6 @@
   var TRIGGERS = {
     sfxTalk: { sound: 'talk', speech: true }, // a person says something (see GIBBERISH)
     sfxPop: { sound: 'pop' }, // a person is pressed
-    sfxQuack: { sound: 'quack' }, // the goose speaks or dives
     sfxFeedKing: { sound: 'feedKing' }, // the feeder is dropped in the pond
     sfxEating: { sound: 'eating', delay: 700 }, // the goose starts eating
     sfxCageDrop: { sound: 'cageDrop', delay: 400 }, // the cages come down
@@ -119,6 +115,7 @@
     sound.files.forEach(function (file) {
       var clip = { audio: new Audio(), broken: false, file: file };
       clip.audio.preload = 'auto';
+      clip.audio.loop = !!sound.loop;
       clip.audio.addEventListener('error', function () {
         clip.broken = true;
         log(name, 'could not be loaded:', file);
@@ -343,6 +340,37 @@
     });
   }
 
+  // Looping background sounds: playing from the first click, paused while muted.
+  var AMBIENT = ['ducks'];
+
+  function updateAmbient() {
+    AMBIENT.forEach(function (name) {
+      var player = players[name];
+      if (!player) {
+        return;
+      }
+      var working = player.clips.filter(function (clip) {
+        return !clip.broken;
+      })[0];
+      if (!working) {
+        return;
+      }
+      var audio = working.audio;
+      audio.volume = SOUNDS[name].volume;
+      if (muted || !unlocked) {
+        if (!audio.paused) {
+          audio.pause();
+        }
+      } else if (audio.paused) {
+        log('ambient start', name);
+        var promise = audio.play();
+        if (promise && promise.catch) {
+          promise.catch(function () {});
+        }
+      }
+    });
+  }
+
   var nextStep = 0;
 
   // Called every frame: while people are walking, plays a step whenever one is due.
@@ -405,6 +433,7 @@
     function tick() {
       share = walking ? walking.value : 0;
       updateFootsteps();
+      updateAmbient();
       requestAnimationFrame(tick);
     }
     tick();
@@ -427,5 +456,6 @@
     }
   });
 
-  window.GameAudio = { attach: attach };
+  // `players` is exposed for checking what has loaded and what is playing (from the console).
+  window.GameAudio = { attach: attach, players: players };
 })();
