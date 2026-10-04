@@ -44,6 +44,8 @@
     pop: { files: variants('click-pop', 3), volume: 0.7, gap: 60 },
     // Ducks quacking in the background: a long recording that loops from the first click onwards.
     ducks: { files: ['ducks-quacking.mp3'], volume: 0.35, loop: true },
+    // The music: loops from the first click onwards.
+    music: { files: ['music.mp3'], volume: 0.4, loop: true },
     feedKing: { files: ['feed-king-duck.mp3'], volume: 0.8 },
     eating: { files: ['eating.mp3'], volume: 0.8 },
     cageDrop: { files: ['cage-drop.mp3'], volume: 0.8 },
@@ -341,7 +343,7 @@
   }
 
   // Looping background sounds: playing from the first click, paused while muted.
-  var AMBIENT = ['ducks'];
+  var AMBIENT = ['ducks', 'music'];
 
   function updateAmbient() {
     AMBIENT.forEach(function (name) {

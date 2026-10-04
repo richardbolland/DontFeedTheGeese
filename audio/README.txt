@@ -12,6 +12,8 @@ audio.js). A sound with no file is just skipped, so you can add them one at a ti
   click-pop-2.mp3
   click-pop-3.mp3
   ducks-quacking.mp3       background ducks: loops from the first click onwards (volume in audio.js)
+  music.mp3                the music: loops from the first click onwards (volume in audio.js)
+                           (use lowercase file names: the hosted site is case-sensitive)
   feed-king-duck.mp3       the feeder is dropped in the pond
   eating.mp3               the goose eats (starts 0.7 seconds after the drop)
   cage-drop.mp3            the cages come down (starts 0.4 seconds after they appear)
