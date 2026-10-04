@@ -45,7 +45,8 @@
     // Ducks quacking in the background: a long recording that loops from the first click onwards.
     ducks: { files: ['ducks-quacking.mp3'], volume: 0.4, loop: true },
     // The music: loops from the first click onwards.
-    music: { files: ['music.mp3'], volume: 0.4, loop: true },
+    // (It fades out and stops for good when the game ends, leaving just the ducks.)
+    music: { files: ['music.mp3'], volume: 0.4, loop: true, stopAtEnd: true },
     feedKing: { files: ['feed-king-duck.mp3'], volume: 0.8 },
     eating: { files: ['eating.mp3'], volume: 0.8 },
     cageDrop: { files: ['cage-drop.mp3'], volume: 0.8 },
@@ -357,6 +358,9 @@
 
   // Looping background sounds: playing from the first click, paused while muted.
   var AMBIENT = ['ducks', 'music'];
+  var MUSIC_FADE_MS = 2000; // how long the music takes to fade out at the end
+  var gameEnded = false;
+  var endedAt = 0;
 
   function updateAmbient() {
     AMBIENT.forEach(function (name) {
@@ -371,7 +375,19 @@
         return;
       }
       var audio = working.audio;
-      audio.volume = SOUNDS[name].volume;
+      var volume = SOUNDS[name].volume;
+      // A sound marked stopAtEnd fades out over MUSIC_FADE_MS once the game has ended, then stays off.
+      if (SOUNDS[name].stopAtEnd && gameEnded) {
+        var left = 1 - (performance.now() - endedAt) / MUSIC_FADE_MS;
+        if (left <= 0) {
+          if (!audio.paused) {
+            audio.pause();
+          }
+          return;
+        }
+        volume *= left;
+      }
+      audio.volume = volume;
       if (muted || !unlocked) {
         if (!audio.paused) {
           audio.pause();
@@ -445,8 +461,14 @@
     });
 
     var walking = vmi.number('walkingShare');
+    var endGame = vmi.boolean('endGame');
     function tick() {
       share = walking ? walking.value : 0;
+      if (endGame && endGame.value && !gameEnded) {
+        gameEnded = true;
+        endedAt = performance.now();
+        log('the game has ended: fading the music out');
+      }
       updateFootsteps();
       updateAmbient();
       requestAnimationFrame(tick);
