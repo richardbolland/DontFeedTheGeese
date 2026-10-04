@@ -43,7 +43,7 @@
     talk: { files: variants('person-talking', 3), volume: 0.7, gap: 150 },
     pop: { files: variants('click-pop', 3), volume: 0.7, gap: 60 },
     // Ducks quacking in the background: a long recording that loops from the first click onwards.
-    ducks: { files: ['ducks-quacking.mp3'], volume: 0.35, loop: true },
+    ducks: { files: ['ducks-quacking.mp3'], volume: 0.4, loop: true },
     // The music: loops from the first click onwards.
     music: { files: ['music.mp3'], volume: 0.4, loop: true },
     feedKing: { files: ['feed-king-duck.mp3'], volume: 0.8 },
@@ -88,7 +88,8 @@
     enabled: true,
     folder: AUDIO_FOLDER + 'voice/',
     extension: 'mp3',
-    volume: 0.5,
+    volume: 0.5, // for recorded letters
+    synthVolume: 2.4, // for the synthesised voice (a much quieter raw sound)
     pitchLow: 0.85,
     pitchHigh: 1.7,
     shiftSemitones: 6, // everyone raised by this much (12 is a whole octave; 2 is one "tone")
@@ -207,6 +208,18 @@
     return context;
   }
 
+  // Everything spoken goes through a compressor, so overlapping letters can't clip.
+  var speechBus = null;
+  function speechOutput(c) {
+    if (!speechBus) {
+      speechBus = c.createDynamicsCompressor();
+      speechBus.threshold.value = -14;
+      speechBus.ratio.value = 6;
+      speechBus.connect(c.destination);
+    }
+    return speechBus;
+  }
+
   // Loads whichever of a.mp3 ... z.mp3 exist.
   function loadLetters() {
     var c = audioContext();
@@ -249,7 +262,7 @@
     osc.frequency.value = note;
     var envelope = c.createGain();
     envelope.gain.setValueAtTime(0, now);
-    envelope.gain.linearRampToValueAtTime(GIBBERISH.volume * 0.5, now + 0.008);
+    envelope.gain.linearRampToValueAtTime(GIBBERISH.synthVolume * 0.5, now + 0.008);
     envelope.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
     formants.forEach(function (frequency) {
       var band = c.createBiquadFilter();
@@ -259,7 +272,7 @@
       osc.connect(band);
       band.connect(envelope);
     });
-    envelope.connect(c.destination);
+    envelope.connect(speechOutput(c));
     osc.start(now);
     osc.stop(now + 0.1);
   }
@@ -282,7 +295,7 @@
     var gain = c.createGain();
     gain.gain.value = GIBBERISH.volume;
     source.connect(gain);
-    gain.connect(c.destination);
+    gain.connect(speechOutput(c));
     source.start();
   }
 
