@@ -7,7 +7,11 @@
 // until the first click or tap. Press M to mute and unmute.
 
 (function () {
-  // `files` is the list of mp3s (in the audio/ folder) a sound can play. With more than one, a
+  // Every sound file lives in this folder (next to index.html). All the file names below are
+  // relative to it.
+  var AUDIO_FOLDER = 'audio/';
+
+  // `files` is the list of mp3s (in the audio folder) a sound can play. With more than one, a
   // different one is picked at random each time (never the same one twice in a row). Files that
   // don't exist are skipped. For example variants('person-talking', 4) means person-talking-1.mp3
   // to person-talking-4.mp3.
@@ -19,11 +23,19 @@
     return files;
   }
 
-  // The sounds. `volume` is 0 to 1. `loop` sounds play continuously; the rest overlap if they are
-  // triggered again before they finish. `gap` is the least time (milliseconds) between two plays
-  // of the same sound, so rapid clicking doesn't turn into noise.
+  // The sounds. `volume` is 0 to 1. Sounds overlap if they are triggered again before they
+  // finish. `gap` is the least time (milliseconds) between two plays of the same sound, so rapid
+  // clicking doesn't turn into noise. The footsteps are single steps, played one after another
+  // while people walk (see FOOTSTEPS below).
   var SOUNDS = {
-    footsteps: { files: ['footsteps.mp3'], volume: 0.4, loop: true },
+    footsteps: {
+      files: [
+        '678714-kinniekindaceline-foot-step_IkGp9l2Y.mp3',
+        '678714-kinniekindaceline-foot-step_Zy5zbIll.mp3',
+        '678714-kinniekindaceline-foot-step_uSZi4qRN.mp3',
+      ],
+      volume: 0.6,
+    },
     talk: { files: variants('person-talking', 3), volume: 0.7, gap: 150 },
     pop: { files: variants('click-pop', 3), volume: 0.7, gap: 60 },
     quack: { files: variants('ducks-quacking', 3), volume: 0.7, gap: 300 },
@@ -48,8 +60,12 @@
   };
 
   // The footsteps follow how much of the crowd is walking (walkingShare, 0 to 1 on the Stage
-  // view model): silent when nobody walks, at full `volume` when everybody does.
+  // view model): silent when nobody walks, and a step every `slowest` milliseconds at a quiet
+  // volume when few do, up to a step every `fastest` milliseconds at full `volume` when everybody
+  // does. Each step is a random one of the files, with a little randomness in the timing.
   var FOOTSTEPS = 'footsteps';
+  var STEP_SLOWEST = 360;
+  var STEP_FASTEST = 110;
 
   var logging = new URLSearchParams(window.location.search).has('sfxlog');
   var muted = false;
@@ -70,12 +86,11 @@
     sound.files.forEach(function (file) {
       var clip = { audio: new Audio(), broken: false, file: file };
       clip.audio.preload = 'auto';
-      clip.audio.loop = !!sound.loop;
       clip.audio.addEventListener('error', function () {
         clip.broken = true;
         log(name, 'could not be loaded:', file);
       });
-      clip.audio.src = 'audio/' + file;
+      clip.audio.src = AUDIO_FOLDER + file;
       player.clips.push(clip);
     });
     players[name] = player;
@@ -92,7 +107,8 @@
     return found;
   }
 
-  function play(name) {
+  // Plays a random working clip of a sound, at `loudness` (0 to 1) times its volume.
+  function play(name, loudness) {
     var player = players[name];
     var sound = SOUNDS[name];
     if (!player || muted) {
@@ -114,35 +130,35 @@
     }
     player.lastClip = pick;
     var clip = player.clips[pick];
-    log('play', name, clip.file);
+    if (name !== FOOTSTEPS) {
+      log('play', name, clip.file);
+    }
     // A copy, so the same sound can overlap with itself.
     var copy = clip.audio.cloneNode();
-    copy.volume = sound.volume;
+    copy.volume = Math.min(1, sound.volume * (loudness === undefined ? 1 : loudness));
     var promise = copy.play();
     if (promise && promise.catch) {
       promise.catch(function () {});
     }
   }
 
+  var nextStep = 0;
+
+  // Called every frame: while people are walking, plays a step whenever one is due.
   function updateFootsteps() {
-    var player = players[FOOTSTEPS];
-    if (!player || player.clips.length === 0 || player.clips[0].broken) {
+    if (muted || !unlocked || share < 0.04) {
       return;
     }
-    var audio = player.clips[0].audio;
-    var volume = muted || !unlocked ? 0 : SOUNDS[FOOTSTEPS].volume * share;
-    audio.volume = Math.min(1, Math.max(0, volume));
-    if (volume > 0.001) {
-      if (audio.paused) {
-        log('footsteps start');
-        var promise = audio.play();
-        if (promise && promise.catch) {
-          promise.catch(function () {});
-        }
-      }
-    } else if (!audio.paused) {
-      audio.pause();
+    var now = performance.now();
+    if (now < nextStep) {
+      return;
     }
+    if (now - nextStep > 1000) {
+      log('footsteps start'); // (the first step after a quiet spell)
+    }
+    play(FOOTSTEPS, share);
+    var interval = STEP_SLOWEST + (STEP_FASTEST - STEP_SLOWEST) * share;
+    nextStep = now + interval * (0.75 + Math.random() * 0.5);
   }
 
   // Called once the game has loaded, with the running Rive instance.

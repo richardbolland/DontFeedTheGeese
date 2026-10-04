@@ -1,7 +1,10 @@
 Sound effects go in this folder. Name each mp3 exactly as below (or change the file names in
 audio.js). A sound with no file is just skipped, so you can add them one at a time.
 
-  footsteps.mp3            loops quietly while people are walking; fades out as they stop
+  the three foot-step clips   single steps, played one after another while people are walking
+                           (faster and louder the more of the crowd is walking). The file names
+                           are listed under `footsteps` in audio.js; change them there if you
+                           rename the files.
   person-talking-1.mp3     a person is pressed and says something (a different one is picked
   person-talking-2.mp3     at random each time, never the same twice in a row)
   person-talking-3.mp3
