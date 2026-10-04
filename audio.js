@@ -38,7 +38,11 @@
     },
     talk: { files: variants('person-talking', 3), volume: 0.7, gap: 150 },
     pop: { files: variants('click-pop', 3), volume: 0.7, gap: 60 },
-    quack: { files: variants('ducks-quacking', 3), volume: 0.7, gap: 300 },
+    quack: {
+      files: variants('ducks-quacking', 3).concat(['ducks-quacking.wav']),
+      volume: 0.7,
+      gap: 300,
+    },
     feedKing: { files: ['feed-king-duck.mp3'], volume: 0.8 },
     eating: { files: ['eating.mp3'], volume: 0.8 },
     cageDrop: { files: ['cage-drop.mp3'], volume: 0.8 },
