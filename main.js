@@ -45,12 +45,27 @@
       loaded = true;
       resize();
       loader.hidden = true;
+      enableDevMode();
     },
     onLoadError: function (error) {
       console.error('Could not load the game:', error);
       loader.textContent = "Sorry, the game couldn't load.";
     },
   });
+
+  // Dev mode: opening the page with ?dev in the address skips straight to the end of the game
+  // (the last feeder is fed to the goose), so the ending can be tested without finding everyone.
+  function enableDevMode() {
+    if (!new URLSearchParams(window.location.search).has('dev')) {
+      return;
+    }
+    var flag = game.viewModelInstance && game.viewModelInstance.boolean('devSkipToEnd');
+    if (flag) {
+      flag.value = true;
+    } else {
+      console.warn('Dev mode: the Stage has no devSkipToEnd property.');
+    }
+  }
 
   // Keep the drawing surface matched to the canvas (and to the screen's pixel density)
   // so the game stays sharp at any window size, on any device, and keep the scene scale up
