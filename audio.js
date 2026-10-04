@@ -23,8 +23,10 @@
     return files;
   }
 
-  // The sounds. `volume` is 0 to 1. Sounds overlap if they are triggered again before they
-  // finish. `gap` is the least time (milliseconds) between two plays of the same sound, so rapid
+  // The sounds. `volume` is 0 to 1. Any sound can also have `volumeVariation` (a fraction, 0.3 =
+  // up to 30% louder or quieter each time) and `pitchVariation` (semitones, 2 = up to two
+  // semitones higher or lower each time), picked at random on every play. Sounds overlap if they
+  // are triggered again before they finish. `gap` is the least time (milliseconds) between two plays of the same sound, so rapid
   // clicking doesn't turn into noise. The footsteps are single steps, played one after another
   // while people walk (see FOOTSTEPS below).
   var SOUNDS = {
@@ -35,6 +37,8 @@
         '678714-kinniekindaceline-foot-step_uSZi4qRN.mp3',
       ],
       volume: 0.6,
+      volumeVariation: 0.35, // each step is up to 35% louder or quieter than the average
+      pitchVariation: 2.5, // ...and up to 2.5 semitones higher or lower
     },
     talk: { files: variants('person-talking', 3), volume: 0.7, gap: 150 },
     pop: { files: variants('click-pop', 3), volume: 0.7, gap: 60 },
@@ -164,7 +168,19 @@
     }
     // A copy, so the same sound can overlap with itself.
     var copy = clip.audio.cloneNode();
-    copy.volume = Math.min(1, sound.volume * (loudness === undefined ? 1 : loudness));
+    // A little randomness in loudness and pitch, so repeats don't sound identical.
+    var volume = sound.volume * (loudness === undefined ? 1 : loudness);
+    if (sound.volumeVariation) {
+      volume *= 1 + (Math.random() * 2 - 1) * sound.volumeVariation;
+    }
+    copy.volume = Math.min(1, Math.max(0, volume));
+    if (sound.pitchVariation) {
+      var semitones = (Math.random() * 2 - 1) * sound.pitchVariation;
+      copy.preservesPitch = false; // so changing the speed changes the pitch too
+      copy.mozPreservesPitch = false;
+      copy.webkitPreservesPitch = false;
+      copy.playbackRate = Math.pow(2, semitones / 12);
+    }
     var promise = copy.play();
     if (promise && promise.catch) {
       promise.catch(function () {});
