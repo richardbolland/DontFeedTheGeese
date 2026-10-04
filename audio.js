@@ -89,6 +89,7 @@
     volume: 0.5,
     pitchLow: 0.85,
     pitchHigh: 1.7,
+    shiftSemitones: 6, // everyone raised by this much (12 is a whole octave; 2 is one "tone")
     swap: { c: 'k', s: 'z' },
     msPerLetter: 60, // the usual time between letters...
     shortestMs: 38, // ...made quicker for long sentences, never faster than this
@@ -282,7 +283,9 @@
       return;
     }
     stopSpeaking();
-    var pitch = GIBBERISH.pitchLow + (GIBBERISH.pitchHigh - GIBBERISH.pitchLow) * (voice || 0);
+    var pitch =
+      (GIBBERISH.pitchLow + (GIBBERISH.pitchHigh - GIBBERISH.pitchLow) * (voice || 0)) *
+      Math.pow(2, GIBBERISH.shiftSemitones / 12);
 
     // Turn the text into letters and pauses, measured in beats.
     var beats = [];
