@@ -53,7 +53,7 @@
   // Which sound each trigger plays. `delay` waits that many milliseconds first, for sounds that
   // belong a moment after the thing that triggers them (an animation that has to get going).
   var TRIGGERS = {
-    sfxTalk: { sound: 'talk' }, // a person says something
+    sfxTalk: { sound: 'talk', speech: true }, // a person says something (see GIBBERISH)
     sfxPop: { sound: 'pop' }, // a person is pressed
     sfxQuack: { sound: 'quack' }, // the goose speaks or dives
     sfxFeedKing: { sound: 'feedKing' }, // the feeder is dropped in the pond
@@ -70,6 +70,30 @@
   var FOOTSTEPS = 'footsteps';
   var STEP_SLOWEST = 360;
   var STEP_FASTEST = 110;
+
+  // Gibberish speech, like Animal Crossing: when a person says something, one short sound is played
+  // for each letter of what they say, in time with the words, so the speech sounds like a made-up
+  // language. Spaces are short gaps and full stops, commas and so on are longer ones.
+  //
+  // The letter sounds are recordings of the alphabet, one file per letter, in `folder`: a.mp3,
+  // b.mp3, ... z.mp3 (record yourself saying each letter, trim each one short, export them).
+  // Until you add them, a made-up synthesised voice is used instead, so it works straight away.
+  // Each person's voice is a little different: `voice` (0 to 1, from the game) picks their pitch
+  // between `pitchLow` and `pitchHigh` (1 is the recording's own pitch, higher is squeakier).
+  // `swap` replaces the sound of a letter with another's (c and s often sound harsh).
+  // Set `enabled` to false to use the plain person-talking clips instead.
+  var GIBBERISH = {
+    enabled: true,
+    folder: AUDIO_FOLDER + 'voice/',
+    extension: 'mp3',
+    volume: 0.5,
+    pitchLow: 0.85,
+    pitchHigh: 1.7,
+    swap: { c: 'k', s: 'z' },
+    msPerLetter: 60, // the usual time between letters...
+    shortestMs: 38, // ...made quicker for long sentences, never faster than this
+    longestSentenceMs: 1900, // and a sentence never takes longer than this
+  };
 
   var logging = new URLSearchParams(window.location.search).has('sfxlog');
   var muted = false;
@@ -146,6 +170,160 @@
     }
   }
 
+  // ---- Gibberish speech ----
+
+  var context = null; // the Web Audio context the letter sounds play through
+  var letterSounds = {}; // letter -> decoded recording
+  var letterCount = 0; // how many letter recordings loaded
+  var speechTimers = []; // the letters still waiting to play for the sentence being spoken
+  var LETTERS = 'abcdefghijklmnopqrstuvwxyz';
+
+  function audioContext() {
+    if (!context) {
+      var Context = window.AudioContext || window.webkitAudioContext;
+      if (Context) {
+        context = new Context();
+      }
+    }
+    if (context && context.state === 'suspended') {
+      context.resume();
+    }
+    return context;
+  }
+
+  // Loads whichever of a.mp3 ... z.mp3 exist.
+  function loadLetters() {
+    var c = audioContext();
+    if (!c) {
+      return;
+    }
+    LETTERS.split('').forEach(function (letter) {
+      fetch(GIBBERISH.folder + letter + '.' + GIBBERISH.extension)
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error('missing');
+          }
+          return response.arrayBuffer();
+        })
+        .then(function (data) {
+          return c.decodeAudioData(data);
+        })
+        .then(function (buffer) {
+          letterSounds[letter] = buffer;
+          letterCount += 1;
+          log('voice letter loaded:', letter);
+        })
+        .catch(function () {});
+    });
+  }
+
+  // Vowel sounds are made of two bands of frequencies ("formants"); every letter borrows one
+  // vowel's so the synthesised voice has some variety.
+  var FORMANTS = { a: [800, 1200], e: [500, 1900], i: [300, 2300], o: [500, 900], u: [350, 700] };
+
+  // A short made-up "voice" blip for a letter, used until there are recordings.
+  function synthLetter(c, letter, pitch) {
+    var index = LETTERS.indexOf(letter);
+    var vowel = 'aeiou'.charAt(index % 5);
+    var formants = FORMANTS[vowel];
+    var now = c.currentTime;
+    var note = 150 * pitch * (1 + (index % 7) * 0.07);
+    var osc = c.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.value = note;
+    var envelope = c.createGain();
+    envelope.gain.setValueAtTime(0, now);
+    envelope.gain.linearRampToValueAtTime(GIBBERISH.volume * 0.5, now + 0.008);
+    envelope.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+    formants.forEach(function (frequency) {
+      var band = c.createBiquadFilter();
+      band.type = 'bandpass';
+      band.frequency.value = frequency;
+      band.Q.value = 5;
+      osc.connect(band);
+      band.connect(envelope);
+    });
+    envelope.connect(c.destination);
+    osc.start(now);
+    osc.stop(now + 0.1);
+  }
+
+  function voiceLetter(c, letter, pitch) {
+    var jitter = 0.94 + Math.random() * 0.12;
+    if (letterCount === 0) {
+      synthLetter(c, letter, pitch * jitter);
+      return;
+    }
+    // Recordings: a letter with no file borrows another that loaded.
+    var buffer = letterSounds[letter];
+    if (!buffer) {
+      var loaded = Object.keys(letterSounds);
+      buffer = letterSounds[loaded[Math.floor(Math.random() * loaded.length)]];
+    }
+    var source = c.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = pitch * jitter;
+    var gain = c.createGain();
+    gain.gain.value = GIBBERISH.volume;
+    source.connect(gain);
+    gain.connect(c.destination);
+    source.start();
+  }
+
+  function stopSpeaking() {
+    speechTimers.forEach(clearTimeout);
+    speechTimers = [];
+  }
+
+  // Plays `text` as gibberish. `voice` (0 to 1) is how squeaky the speaker is.
+  function speak(text, voice) {
+    var c = audioContext();
+    if (!c || muted || !unlocked || !text) {
+      return;
+    }
+    stopSpeaking();
+    var pitch = GIBBERISH.pitchLow + (GIBBERISH.pitchHigh - GIBBERISH.pitchLow) * (voice || 0);
+
+    // Turn the text into letters and pauses, measured in beats.
+    var beats = [];
+    var total = 0;
+    text
+      .toLowerCase()
+      .split('')
+      .forEach(function (character) {
+        var letter = null;
+        var length = 1;
+        if (character >= 'a' && character <= 'z') {
+          letter = GIBBERISH.swap[character] || character;
+        } else if (character >= '0' && character <= '9') {
+          letter = LETTERS.charAt(Math.floor(Math.random() * 26));
+        } else if (character === ' ') {
+          length = 1;
+        } else if (character === '.' || character === ',' || character === '!' || character === '?' || character === ':') {
+          length = 3;
+        } else {
+          return;
+        }
+        beats.push({ letter: letter, at: total });
+        total += length;
+      });
+    if (total === 0) {
+      return;
+    }
+    var beat = Math.max(GIBBERISH.shortestMs, Math.min(GIBBERISH.msPerLetter, GIBBERISH.longestSentenceMs / total));
+    log('speak', text.length + ' characters, a letter every ' + Math.round(beat) + ' ms');
+    beats.forEach(function (entry) {
+      if (!entry.letter) {
+        return;
+      }
+      speechTimers.push(
+        setTimeout(function () {
+          voiceLetter(c, entry.letter, pitch);
+        }, entry.at * beat)
+      );
+    });
+  }
+
   var nextStep = 0;
 
   // Called every frame: while people are walking, plays a step whenever one is due.
@@ -175,6 +353,12 @@
 
     Object.keys(SOUNDS).forEach(load);
 
+    var talkText = vmi.string('talkText');
+    var talkVoice = vmi.number('talkVoice');
+    if (GIBBERISH.enabled) {
+      loadLetters();
+    }
+
     Object.keys(TRIGGERS).forEach(function (triggerName) {
       var trigger = vmi.trigger(triggerName);
       if (!trigger) {
@@ -183,6 +367,11 @@
       }
       var entry = TRIGGERS[triggerName];
       trigger.on(function () {
+        // A person speaking is voiced letter by letter instead of by a recording.
+        if (entry.speech && GIBBERISH.enabled) {
+          speak(talkText ? talkText.value : '', talkVoice ? talkVoice.value : 0);
+          return;
+        }
         if (entry.delay) {
           setTimeout(function () {
             play(entry.sound);
@@ -214,6 +403,7 @@
   window.addEventListener('keydown', function (event) {
     if (event.key === 'm' || event.key === 'M') {
       muted = !muted;
+      stopSpeaking();
       log(muted ? 'muted' : 'unmuted');
     }
   });

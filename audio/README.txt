@@ -26,3 +26,14 @@ on) near the top of audio.js.
 
 Press M in the game to mute and unmute. Add ?sfxlog to the address to see in the browser console
 which sound plays when (and which files could not be found).
+
+Gibberish speech (Animal Crossing style)
+----------------------------------------
+When a person says something, the game plays one short sound per letter of what they say, so it
+sounds like a made-up language. Until you add recordings it uses a synthesised voice. To use your
+own voice, record yourself saying each letter of the alphabet, trim each clip short (about a
+tenth of a second to half a second), and save them in audio/voice/ as a.mp3, b.mp3 ... z.mp3
+(watch out for a doubled .mp3.mp3 extension). Any letter you leave out borrows another. Each
+person gets a slightly different pitch. The settings (volume, pitch range, timing, which letters
+swap for others) are in the GIBBERISH block of audio.js. Set `enabled: false` there to use the
+plain person-talking clips instead.
