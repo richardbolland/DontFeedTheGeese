@@ -88,8 +88,8 @@
     enabled: true,
     folder: AUDIO_FOLDER + 'voice/',
     extension: 'mp3',
-    volume: 0.5, // for recorded letters
-    synthVolume: 2.4, // for the synthesised voice (a much quieter raw sound)
+    volume: 0.27, // for recorded letters
+    synthVolume: 1.3, // for the synthesised voice (a much quieter raw sound)
     pitchLow: 0.85,
     pitchHigh: 1.7,
     shiftSemitones: 6, // everyone raised by this much (12 is a whole octave; 2 is one "tone")
