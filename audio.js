@@ -48,10 +48,10 @@
     // (It fades out and stops for good when the game ends, leaving just the ducks.)
     music: { files: ['music.mp3'], volume: 0.4, loop: true, stopAtEnd: true },
     feedKing: { files: ['feed-king-duck.mp3'], volume: 0.8 },
-    eating: { files: ['eating.mp3'], volume: 0.8 },
-    cageDrop: { files: ['cage-drop.mp3'], volume: 0.8 },
+    eating: { files: ['eating.mp3'], volume: 0.9 },
+    cageDrop: { files: ['cage-drop.mp3'], volume: 0.9 },
     caged: { files: ['placed-in-cage.mp3'], volume: 0.8, gap: 100 },
-    death: { files: ['death.mp3'], volume: 0.7, gap: 50 },
+    death: { files: variants('death', 3), volume: 0.8, gap: 50 },
   };
 
   // Which sound each trigger plays. `delay` waits that many milliseconds first, for sounds that

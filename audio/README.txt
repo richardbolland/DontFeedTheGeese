@@ -18,7 +18,7 @@ audio.js). A sound with no file is just skipped, so you can add them one at a ti
   eating.mp3               the goose eats (starts 0.7 seconds after the drop)
   cage-drop.mp3            the cages come down (starts 0.4 seconds after they appear)
   placed-in-cage.mp3       someone is locked in a cage
-  death.mp3                someone is destroyed
+  death-1.mp3 to death-3.mp3   someone is destroyed (a random one each time)
 
 You don't need all three variants: with only some of the files present it picks from the ones that
 exist. To use more or fewer variants, change the number in variants('person-talking', 3) (and so
