@@ -41,7 +41,13 @@
       pitchVariation: 2.5, // ...and up to 2.5 semitones higher or lower
     },
     talk: { files: variants('person-talking', 3), volume: 0.7, gap: 150 },
-    pop: { files: variants('click-pop', 3), volume: 0.7, gap: 60 },
+    pop: {
+      files: variants('click-pop', 3),
+      volume: 0.7,
+      gap: 60,
+      volumeVariation: 0.2,
+      pitchVariation: 2,
+    },
     // Ducks quacking in the background: a long recording that loops from the first click onwards.
     ducks: { files: ['ducks-quacking.mp3'], volume: 0.4, loop: true },
     // The music: loops from the first click onwards.
@@ -51,7 +57,13 @@
     eating: { files: ['eating.mp3'], volume: 0.9 },
     cageDrop: { files: ['cage-drop.mp3'], volume: 0.9 },
     caged: { files: ['placed-in-cage.mp3'], volume: 0.8, gap: 100 },
-    death: { files: variants('death', 3), volume: 0.8, gap: 50 },
+    death: {
+      files: variants('death', 3),
+      volume: 0.8,
+      gap: 50,
+      volumeVariation: 0.2, // up to 20% louder or quieter each time
+      pitchVariation: 2, // up to 2 semitones higher or lower each time
+    },
   };
 
   // Which sound each trigger plays. `delay` waits that many milliseconds first, for sounds that
